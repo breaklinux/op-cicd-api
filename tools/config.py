@@ -1,7 +1,7 @@
 """
 1.登陆jenkins 账号信息配置;
 """
-accUrl="http://192.168.11.13:8080/jenkins"
+accUrl="http://192.168.1.1:8080/jenkins"
 username="admin"
 password="admin"
 
