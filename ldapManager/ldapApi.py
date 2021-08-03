@@ -6,25 +6,29 @@ from email.mime.text import MIMEText
 from ldap3 import Server, Connection,HASHED_SHA
 from ldap3.utils.hashed import hashed
 from ldap3 import ALL_ATTRIBUTES
+
 class MyLdap(object):
-    def __init__(self, ldap_host='ldap://op-ldap.mumway.com',
-                 ldap_port='389',
-                 ldap_name='cn=admin,dc=xiavan,dc=com',
-                 ldap_passwd='Ldap#xiavan2021'):
+    #LDAP类的初始化参数
+    def __init__(self, ldap_host='ldap://xxxxxx', #你的LDAP地址
+                 ldap_port='389', #LDAP端口
+                 ldap_name='cn=admin,dc=breaklinux,dc=com', #LDAP域信息
+                 ldap_passwd='1234567'): #LDAP认证密码
         self.ldap_host = ldap_host
         self.ldap_port = ldap_port
         self.ldap_name = ldap_name
         self.ldap_passwd = ldap_passwd
         self.ldap_obj = None
         self.ldap_connect(ldap_host, ldap_port, ldap_name, ldap_passwd)
-
+     
     def ldap_connect(self, ldap_host, ldap_port, ldap_name, ldap_passwd):
+        #连接LDAP固定参数 
         ldap_url = "{}:{}".format(ldap_host, ldap_port)
         server = Server(ldap_url, get_info='ALL')
         conn = Connection(server, ldap_name, ldap_passwd)
         conn.bind()
         self.ldap_obj = conn
     def ldap_rendom_password(self):
+        #随机生成LDAP密码
         seed = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
         sa = []
         for i in range(16):
@@ -32,12 +36,14 @@ class MyLdap(object):
         password = ''.join(sa)
         return password
     def ldap_add(self, username, name, mail=None):
+        #添加LDAP用户 
+        #发送邮箱
         if mail is None:
-            mail = '{}@xiavan.com'.format(username)
+            mail = '{}@breaklinux.com'.format(username)
         passwd = self.ldap_rendom_password()
         hashed_password = hashed(HASHED_SHA, passwd)
         hashed_password = hashed_password.replace('sha', 'SHA')  # 将sha 替换为 SHA
-        dn = 'cn={},ou=user,dc=xiavan,dc=com'.format(username)
+        dn = 'cn={},ou=user,dc=breaklinux,dc=com'.format(username)
         uid = uuid.uuid1().int
         obj_class = ['top', 'shadowAccount', 'posixAccount', 'inetOrgPerson']
         data = {'cn': username,
@@ -58,8 +64,6 @@ class MyLdap(object):
                 'shadowWarning': 0,
                 'userPassword': hashed_password}
         ret = self.ldap_obj.add(dn, obj_class, data)
-        # self.ldap_mail(mail, username, passwd)
-        # return username, passwd
         if ret:
             print(username, passwd)
             self.ldap_mail(mail, username, passwd)
@@ -67,8 +71,8 @@ class MyLdap(object):
         return {"code": 1, "username":username,"passwd":"账号已存在","mail":mail }
 
     def ldap_search(self, user='*'):
-
-        search_parameters = {'search_base': 'ou=user,dc=xiavan,dc=com',
+        #查询lDAP用户 默认输入 * 查询所有用户
+        search_parameters = {'search_base': 'ou=user,dc=breklinux,dc=com',
                              'search_filter': '(cn={})'.format(user)}
         self.ldap_obj.search(**search_parameters, attributes=ALL_ATTRIBUTES)
         search_list = self.ldap_obj.response
@@ -86,10 +90,11 @@ class MyLdap(object):
         if not user_list:
             user_list = "用户不存在"
         return user_list
-
+     
 
     def ldap_del(self, username):
-        dn = "cn={},ou=user,dc=xiavan,dc=com".format(username)
+        #删除LDAP用户  
+        dn = "cn={},ou=user,dc=breklinux,dc=com".format(username)
         ret = self.ldap_obj.delete(dn)
         if ret:
            return {"code": 0, "msg":"success","username":username }
@@ -99,10 +104,10 @@ class MyLdap(object):
     def ldap_mail(self, receivers, username, password):
         print(receivers, username, password)
         mail_host = "smtp.exmail.qq.com"  # SMTP服务器
-        mail_user = "developer@mumway.com"  # 用户名
-        mail_pass = "Hymm2020!@#$"  # 密码(这里的密码不是登录邮箱密码，而是授权码)
+        mail_user = "xxx"  # 发送邮箱的用户名
+        mail_pass = "xxx!@#$"  # 密码(这里的密码不是登录邮箱密码，而是授权码)
 
-        mail_sender = 'developer@mumway.com'  # 发件人邮箱
+        mail_sender = 'xxxx'  # 发件人邮箱
         mail_receivers = [receivers]  # 接收人邮箱
 
         content = '账号：{}  密码：{}'.format(username, password)
@@ -136,4 +141,3 @@ class MyLdap(object):
                             tmp_list.append((name, email))
                         else:
                             self.ldap_get_values(j, tmp_list)
-
