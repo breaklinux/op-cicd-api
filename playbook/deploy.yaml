@@ -1,0 +1,35 @@
+---
+- hosts: "all"
+  gather_facts: no
+  vars:
+    copySrc: ""
+    apmAgent: ""
+  tasks:
+    - name: 初始化本地目录
+      local_action:
+        shell if [ ! -d "/tmp/{{ tmp_unarchive_dir }}" ];then mkdir /tmp/{{ tmp_unarchive_dir }} -p; else echo "目录已存在！！！！\n"; fi
+      delegate_to: 127.0.0.1
+
+    - name: 解压缩包
+      local_action:
+        unarchive src={{ update_dir }}/{{ appversion }} dest=/tmp/{{ tmp_unarchive_dir }} copy=no
+      register: unarchive_result
+      delegate_to: 127.0.0.1
+
+    - name: 初始化目录
+      shell: if [ ! -d "{{ server_package_dir }}" ];then mkdir -p {{ server_package_dir }};  else echo "目录已存在！！！"; fi
+
+    - name: 更新文件
+      synchronize: src=/tmp/{{ tmp_unarchive_dir }}/  dest={{ server_package_dir }} recursive=yes
+
+    - name: 建立新软链接
+      file: src={{ server_package_dir }} dest={{ server_bin }} state=link
+
+    - name: 启动服务
+      shell: cd {{ server_dir }} && sh restart.sh
+      register: restart_result
+
+    - name: 清理多余文件
+      local_action:
+        shell rm -rf /tmp/{{ tmp_unarchive_dir }}/*
+      delegate_to: 127.0.0.1
