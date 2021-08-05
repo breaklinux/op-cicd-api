@@ -1,13 +1,14 @@
 from flask import Blueprint
 from flask import request, Response, current_app
 from flask_paginate import Pagination, get_page_parameter
-
+from sqlalchemy import or_,and_
 instanceMgUrl = Blueprint('instance', __name__)
 from tools.config import instanceMgHeader
 
 
 @instanceMgUrl.route('/api/v1', methods=['GET', 'POST', 'DELETE', 'PUT'])
 def appmgRun():
+    
     """
     1.查询instance实例默认一页5条数据
     2.创建instance实例,判断是否存在该应用存在直接返回,不存在进行创建，
@@ -27,9 +28,8 @@ def appmgRun():
         env = Data.get('env', None)
         print(Data)
         if appname and instname and ip and env:
-            queryAppname = Instancemg.query.filter(Instancemg.appname == appname).all()
-            queryEnv = Instancemg.query.filter(Instancemg.env == env).all()
-            if queryAppname and queryEnv:
+            queryInInfo = Instancemg.query.filter(and_(Instancemg.appname.like(appname)),(Instancemg.env.like(env))).all()
+            if queryInInfo:
                 msg = "appname {app} existing".format(app=appname)
                 return Response(json.dumps({"code": 1, "data": msg}), mimetype='application/json')
             else:
